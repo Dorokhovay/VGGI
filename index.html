@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>WebGL PA1: Continuous Topographic Surface of Cassini</title>
+
+    <style>
+:root {
+    --bg-color: #050D33;
+    --text-color: #fff;
+    --panel-color: rgba(20, 20, 30, 0.8);
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: var(--bg-color);
+    color: var(--text-color);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
+    min-height: 100vh;
+    overflow-x: hidden;
+}
+
+h1, h2 {
+    color: var(--text-color);
+    margin-bottom: 10px;
+    font-size: 2.5em;
+    text-shadow: none; 
+}
+
+#message {
+    text-align: center;
+    margin-bottom: 25px;
+    color: var(--text-color);
+    font-size: 1.2em;
+    line-height: 1.4;
+    text-shadow: none;
+}
+
+#canvas-holder {
+    border: 2px solid #050D33;
+    border-radius: 10px;
+    overflow: hidden;
+    background-color: var(--panel-color);
+    box-shadow: none; 
+    transition: none;  
+}
+
+#canvas-holder:hover {
+    transform: none; 
+    box-shadow: none;
+}
+
+#webglcanvas {
+    display: block;
+    background-color: transparent;
+    filter: none; 
+    border-radius: 0;
+}
+</style>
+
+
+    <script src="./Utils/trackball-rotator.js"></script>
+    <script src="./Utils/m4.js"></script>
+    <script src="./shader.gpu"></script>
+    <script src="./model.js"></script>
+    <script src="./main.js"></script>
+
+</head>
+<body onload="init()">
+
+    <h1>PA1</h1>
+
+    <p id="message">
+        Dorokhova Yelyzaveta - Variant 11<br>
+    </p>
+
+    <h1>Continuous Topographic Surface of Cassini</h1>
+
+    <div id="canvas-holder">
+        <canvas width="600" height="600" id="webglcanvas"></canvas>
+    </div>
+
+    <div class="info">
+    </div>
+
+</body>
+</html>
