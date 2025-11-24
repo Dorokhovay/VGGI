@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Continuous Topographic Surface of Cassini</title>
+<style>
+    html, body {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+        font-family: "Segoe UI", Arial, sans-serif;
+        background: #050D33;
+        color: #ffffff;
+    }
+
+    #container {
+        display: flex;
+        flex-direction: column;
+        height: 100vh;
+        width: 100vw;
+    }
+
+    h1 {
+        text-align: center;
+        margin: 10px 0;
+        color: #ffffff;
+        font-weight: 700;
+    }
+
+    #canvas-holder {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: #050D33;
+    }
+
+    canvas {
+        width: 90%;
+        height: 90%;
+        display: block;
+    }
+
+    #controls {
+        display: flex;
+        justify-content: space-around;
+        align-items: center;
+        padding: 10px 20px;
+        background: #050D33;
+        box-shadow: 0 -4px 10px rgba(0,0,0,0.2);
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+    #controls label {
+        font-weight: 500;
+        margin-right: 5px;
+    }
+
+    #controls input[type="range"], #controls input[type="number"] {
+        width: 120px;
+    }
+
+    #controls button {
+        background-color: #000000;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        padding: 10px 20px;
+        cursor: pointer;
+        transition: background 0.3s;
+    }
+
+    #controls button:hover {
+        background-color: #2d405c;
+    }
+
+    .slider-container {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+
+    .mode-container {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+</style>
+
+<script src="./Utils/trackball-rotator.js"></script>
+<script src="./Utils/m4.js"></script>
+<script src="./shader.gpu"></script>
+<script src="./main.js"></script>
+</head>
+<body onload="init()">
+
+<div id="container">
+    <h1>Continuous Topographic Surface of Cassini</h1>
+
+    <div id="canvas-holder">
+        <canvas id="webglcanvas"></canvas>
+    </div>
+
+    <div id="controls">
+        <div class="slider-container">
+            <label for="uSlider">U Steps:</label>
+            <input type="range" id="uSlider" min="3" max="150" value="100" oninput="updateUSteps(this.value)">
+            <span id="uSliderValue">100</span>
+        </div>
+
+        <div class="slider-container">
+            <label for="vSlider">V Steps:</label>
+            <input type="range" id="vSlider" min="3" max="100" value="20" oninput="updateVSteps(this.value)">
+            <span id="vSliderValue">20</span>
+        </div>
+
+        <div class="mode-container">
+            <label>Mode:</label>
+            <input type="radio" id="modeFill" name="renderMode" value="fill" checked onchange="setRenderMode(this.value)">
+            <label for="modeFill">Fill</label>
+            <input type="radio" id="modeWire" name="renderMode" value="wireframe" onchange="setRenderMode(this.value)">
+            <label for="modeWire">Wireframe</label>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>
