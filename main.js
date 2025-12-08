@@ -31,6 +31,9 @@ function renderScene() {
 
 function generateCassiniMesh() {
     let vertices = [];
+    let uIndices = [];
+    let vIndices = [];
+
     const a = 8;
     const zMin = -8 / 3;
     const zMax = 8 / 3;
@@ -41,25 +44,53 @@ function generateCassiniMesh() {
     for (let k = 0; k <= zSteps; k++) {
         let z = zMin + k * (zMax - zMin) / zSteps;
         let c = 3 * z;
+
         for (let i = 0; i <= uSteps; i++) {
             let u = i * 2 * Math.PI / uSteps;
             let cos2u = Math.cos(2 * u);
             let sin2u = Math.sin(2 * u);
+
             let inner = a ** 4 - (c ** 4) * (sin2u ** 2);
             let r = 0;
             if (inner >= 0) r = Math.sqrt(c * c * cos2u + Math.sqrt(inner));
+
             let x = scale * r * Math.cos(u);
             let y = scale * r * Math.sin(u);
+
             vertices.push(x, y, scale * z);
         }
     }
 
+    const rowSize = uSteps + 1;
+
+    // === 2. U-полілінії (горизонтальні) ===
+    for (let k = 0; k <= zSteps; k++) {
+        for (let i = 0; i < uSteps; i++) {
+            let idx = k * rowSize + i;
+            uIndices.push(idx, idx + 1);
+        }
+    }
+
+    // === 3. V-полілінії (вертикальні) ===
+    for (let i = 0; i <= uSteps; i++) {
+        for (let k = 0; k < zSteps; k++) {
+            let idx = k * rowSize + i;
+            vIndices.push(idx, idx + rowSize);
+        }
+    }
+
     return {
-        vertices: vertices,
-        uGrid: { offset: 0, count: vertices.length / 3, verticesPerLine: uSteps + 1, numLines: zSteps + 1 },
-        vGrid: { offset: 0, count: vertices.length / 3, verticesPerLine: uSteps + 1, numLines: zSteps + 1 }
+    vertices: vertices,
+    uGrid: {
+        indices: uIndices
+    },
+    vGrid: {
+        indices: vIndices
+    }
     };
+
 }
+
 
 function setupGL() {
     let program = createShaderProgram(gl, vertexShaderSource, fragmentShaderSource);
@@ -107,7 +138,7 @@ function init() {
     let canvas;
     try {
         canvas = document.getElementById("webglcanvas");
-        gl = canvas.getContext("webgl");
+        gl = canvas.getContext("webgl2");
         if (!gl) throw "WebGL not supported";
     } catch (e) {
         document.getElementById("canvas-holder").innerHTML =
