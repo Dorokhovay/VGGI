@@ -340,9 +340,9 @@ function initGL() {
     shProgram.iWireframeColor = gl.getUniformLocation(prog, "u_wireframeColor");
     shProgram.iRenderMode = gl.getUniformLocation(prog, "u_renderMode"); 
 
-    shProgram.diffuseTexture = LoadTexture(gl, "./texture/diff.jpg");
-    shProgram.specularTexture = LoadTexture(gl, "./texture/spec.jpg");
-    shProgram.normalTexture   = LoadTexture(gl, "./texture/norm.png");
+    shProgram.diffuseTexture = LoadTexture(gl, "./texture/diff2.jpg");
+    shProgram.specularTexture = LoadTexture(gl, "./texture/spec2.jpg");
+    shProgram.normalTexture   = LoadTexture(gl, "./texture/norm2.jpg");
 
 
     gl.uniform1i(shProgram.uUseDiffuse, 1);
