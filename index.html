@@ -48,17 +48,19 @@
     }
 
     #controls {
-        display: flex;
-        justify-content: space-around;
-        align-items: center;
-        padding: 10px 20px;
-        background: #050D33;
-        box-shadow: 0 -4px 10px rgba(0,0,0,0.2);
-        flex-wrap: wrap;
-        gap: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 16px;
+    background: #050D33;
     }
 
- 
+    .controls-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 16px;
+}
+
     #canvas-holder {
         flex: 1;
         display: flex;
@@ -72,21 +74,80 @@
         height: 90%;
         display: block;
     }
+    
     #controls > div > label {
-    display: inline-block;
-    width: 90px;
-    font-weight: 500;
-}
+        display: inline-block;
+        width: 90px;
+        font-weight: 500;
+    }
 
-.texture-group label {
-    width: auto; /* не обмежуємо ширину */
-}
+    .texture-group label {
+        width: auto;
+    }
 
+    .slider-container {
+    display: grid;
+    grid-template-columns: 70px 1fr 40px;
+    align-items: center;
+    gap: 6px;
+    }
+
+    .slider-container label {
+        width: auto;
+    }
+
+
+    .texture-transform-info {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 5px 10px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 5px;
+    }
+
+    .controls-hint {
+    align-self: center;
+    text-align: center;
+
+    padding: 8px 14px;
+    max-width: 800px;
+
+    background: rgba(255, 255, 255, 0.06);
+    border-radius: 8px;
+
+    font-size: 0.8em;
+    opacity: 0.85;
+    }
+
+
+    .control-section {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 8px;
+
+    padding: 12px;
+    min-height: 150px;
+
+    background: rgba(255, 255, 255, 0.06);
+    border-radius: 8px;
+
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.08);
+    }
+
+
+    .control-section-title {
+    text-align: center;
+    font-weight: 600;
+    font-size: 0.95em;
+    color: #d5b817e6;
+    padding-bottom: 6px;
+    border-bottom: 1px solid rgba(255,255,255,0.15);
+    }
 
  
 </style>
-
-
 
 </head>
 <body onload="init()">
@@ -98,46 +159,88 @@
     </div>
 
     <div id="controls">
-        <div class="slider-container">
-            <label for="uSlider">U Steps:</label>
-            <input type="range" id="uSlider" min="3" max="150" value="100" oninput="updateUSteps(this.value)">
-            <span id="uSliderValue">100</span>
+        <div class="controls-grid">
+        <!-- Секція геометрії поверхні -->
+        <div class="control-section">
+            <div class="control-section-title">Surface Geometry</div>
+            
+            <div class="slider-container">
+                <label for="uSlider">U Steps:</label>
+                <input type="range" id="uSlider" min="3" max="150" value="100" oninput="updateUSteps(this.value)">
+                <span id="uSliderValue">100</span>
+            </div>
+
+            <div class="slider-container">
+                <label for="vSlider">V Steps:</label>
+                <input type="range" id="vSlider" min="3" max="100" value="20" oninput="updateVSteps(this.value)">
+                <span id="vSliderValue">20</span>
+            </div>
         </div>
 
-        <div class="slider-container">
-            <label for="vSlider">V Steps:</label>
-            <input type="range" id="vSlider" min="3" max="100" value="20" oninput="updateVSteps(this.value)">
-            <span id="vSliderValue">20</span>
+        <!-- Секція режиму рендерингу -->
+        <div class="control-section">
+            <div class="control-section-title">Render Mode</div>
+            
+            <div class="mode-container">
+                <input type="radio" id="modeFill" name="renderMode" value="fill" checked onchange="setRenderMode(this.value)">
+                <label for="modeFill">Fill</label>
+                <input type="radio" id="modeWire" name="renderMode" value="wireframe" onchange="setRenderMode(this.value)">
+                <label for="modeWire">Wireframe</label>
+            </div>
         </div>
 
-        <div class="mode-container">
-            <label>Mode:</label>
-            <input type="radio" id="modeFill" name="renderMode" value="fill" checked onchange="setRenderMode(this.value)">
-            <label for="modeFill">Fill</label>
-            <input type="radio" id="modeWire" name="renderMode" value="wireframe" onchange="setRenderMode(this.value)">
-            <label for="modeWire">Wireframe</label>
+        <!-- Секція текстур -->
+        <div class="control-section">
+            <div class="control-section-title">Texture Maps</div>
+            
+            <label>
+                <input type="checkbox" id="useDiffuseMap" checked onchange="updateRenderSettings()">
+                Use Diffuse
+            </label>
+
+            <label>
+                <input type="checkbox" id="useSpecularMap" checked onchange="updateRenderSettings()">
+                Use Specular
+            </label>
+
+            <label>
+                <input type="checkbox" id="useNormalMap" checked onchange="updateRenderSettings()">
+                Use Normal
+            </label>
         </div>
-        <label >Texture:</label>
-        
-        <label>
-            <input type="checkbox" id="useDiffuseMap" checked onchange="updateRenderSettings()">
-            Use Diffuse Map
-        </label>
 
-        <label>
-            <input type="checkbox" id="useSpecularMap" checked onchange="updateRenderSettings()">
-            Use Specular Map
-        </label>
+        <!-- Секція трансформації текстури -->
+        <div class="control-section">
+            <div class="control-section-title">Texture Transform</div>
+            
+            <div class="slider-container">
+                <label for="centerUSlider">Center U:</label>
+                <input type="range" id="centerUSlider" min="0" max="1" step="0.01" value="0.5" oninput="updateCenterU(this.value)">
+                <span id="centerU">0.50</span>
+            </div>
 
-        <label>
-            <input type="checkbox" id="useNormalMap" checked onchange="updateRenderSettings()">
-            Use Normal Map
-        </label>
+            <div class="slider-container">
+                <label for="centerVSlider">Center V:</label>
+                <input type="range" id="centerVSlider" min="0" max="1" step="0.01" value="0.5" oninput="updateCenterV(this.value)">
+                <span id="centerV">0.50</span>
+            </div>
+
+            <div class="slider-container">
+                <label for="scaleSlider">Scale:</label>
+                <input type="range" id="scaleSlider" min="0.1" max="5.0" step="0.1" value="1.0" oninput="updateScale(this.value)">
+                <span id="scaleValue">1.00</span>
+            </div>
+        </div>
+    </div>
+        <div class="controls-hint">
+        <small>
+            Keyboard: W/S - move V | A/D - move U | Q/E - scale |
+            Mouse: drag to rotate | wheel to zoom
+        </small>
+    </div>
    
     </div>
 </div>
-
-
 
 <script src="./Utils/trackball-rotator.js"></script>
 <script src="./Utils/m4.js"></script>

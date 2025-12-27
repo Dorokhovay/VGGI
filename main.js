@@ -19,6 +19,11 @@ let useDiffuseMap = true;
 let useSpecularMap = true;
 let useNormalMap = true;
 
+let texScaleCenter = { u: 0.5, v: 0.5 }; // центр масштабування
+let texScale = 1.0; // коефіцієнт масштабування
+const texMoveStep = 0.05; // крок переміщення точки
+let centerMarker;
+
 function deg2rad(angle) { return angle * Math.PI / 180; }
 
 
@@ -56,6 +61,9 @@ function draw() {
     gl.uniform3fv(shProgram.iLightPosition, viewLightPos);
     gl.uniform4fv(shProgram.iWireframeColor, [0.8, 0.5, 0.02, 1.0]); 
 
+    // Передаємо центр масштабування в shader
+    gl.uniform2f(shProgram.uTexScaleCenter, texScaleCenter.u, texScaleCenter.v);
+    gl.uniform1f(shProgram.uTexScale, texScale);
     
     gl.uniform1i(shProgram.iRenderMode, renderMode === "fill" ? 0 : 1);
     
@@ -104,6 +112,18 @@ function draw() {
     gl.uniformMatrix4fv(shProgram.iNormalMatrix, false, sphereNormalMatrix);
 
     lightSphere.Draw();
+
+    // Малювання маркера центру
+    gl.uniform1i(shProgram.iRenderMode, 3); // новий режим для маркера
+    let centerPos = getPositionAtUV(texScaleCenter.u, texScaleCenter.v);
+    let markerModelMatrix = m4.translation(centerPos[0], centerPos[1], centerPos[2]);
+    let markerModelViewMatrix = m4.multiply(viewMatrix, markerModelMatrix);
+    gl.uniformMatrix4fv(shProgram.iModelViewMatrix, false, markerModelViewMatrix);
+    let markerNormalMatrix = m4.transpose(m4.inverse(markerModelViewMatrix));
+    gl.uniformMatrix4fv(shProgram.iNormalMatrix, false, markerNormalMatrix);
+    
+    gl.uniform4fv(shProgram.iWireframeColor, [1.0, 0.0, 0.0, 1.0]); // червоний маркер
+    centerMarker.Draw();
 }
 
 
@@ -223,6 +243,32 @@ function CreateSurfaceData() {
     return { vertices, indices, wireIndices, normals, texcoords, tangents, bitangents };
 }
 
+function CreateMarkerData() {
+    // Створюємо маркер
+    let vertices = [];
+    let indices = [];
+    let normals = [];
+    
+    const size = 0.3;
+    vertices = [
+        -size, -size, 0,
+         size, -size, 0,
+         size,  size, 0,
+        -size,  size, 0
+    ];
+    
+    indices = [0, 1, 2, 0, 2, 3];
+    
+    normals = [
+        0, 0, 1,
+        0, 0, 1,
+        0, 0, 1,
+        0, 0, 1
+    ];
+    
+    return { vertices, indices, wireIndices: indices, normals };
+}
+
 
 function CreateSphereData(radius, latBands, longBands) {
      let vertices = [];
@@ -311,6 +357,9 @@ function initGL() {
     shProgram.iAttribTangent   = gl.getAttribLocation(prog, "a_tangent");
     shProgram.iAttribBitangent = gl.getAttribLocation(prog, "a_bitangent");
 
+    shProgram.uTexScaleCenter = gl.getUniformLocation(prog, "u_texScaleCenter");
+    shProgram.uTexScale = gl.getUniformLocation(prog, "u_texScale");
+
     shProgram.uDiffuseTex  = gl.getUniformLocation(prog, "u_diffuseTex");
     shProgram.uSpecularTex = gl.getUniformLocation(prog, "u_specularTex");
     shProgram.uNormalTex   = gl.getUniformLocation(prog, "u_normalTex");
@@ -361,13 +410,49 @@ function initGL() {
     surfaceData.bitangents
     );
 
-    
+    centerMarker = new Model('CenterMarker');
+    let markerData = CreateMarkerData();
+    centerMarker.BufferData(
+        markerData.vertices, 
+        markerData.indices, 
+        markerData.wireIndices, 
+        markerData.normals
+    );
 
     lightSphere = new Model('LightSphere');
     
     let sphereData = CreateSphereData(0.25, 20, 20); 
     lightSphere.BufferData(sphereData.vertices, sphereData.indices, sphereData.wireIndices, sphereData.normals);
     
+}
+
+// Функція для обчислення 3D позиції на поверхні за UV координатами
+function getPositionAtUV(u, v) {
+    let a = 8;
+    let zMin = -8 / 3;
+    let zMax = 8 / 3;
+    let scale = 1.3;
+    
+    // Перетворити v [0,1] в z
+    let z = zMin + v * (zMax - zMin);
+    
+    // Перетворити u [0,1] в кут
+    let angle = u * 2 * Math.PI;
+    
+    let c = 3 * z;
+    let cos2u = Math.cos(2 * angle);
+    let sin2u = Math.sin(2 * angle);
+    
+    let inner = a ** 4 - (c ** 4) * (sin2u ** 2);
+    
+    let r = 0;
+    if (inner >= 0) r = Math.sqrt(c * c * cos2u + Math.sqrt(inner));
+    
+    let x = scale * r * Math.cos(angle);
+    let y = scale * r * Math.sin(angle);
+    let zz = scale * z;
+    
+    return [x, y, zz];
 }
 
 function updateRenderSettings() {
@@ -443,7 +528,82 @@ function init() {
     
     window.addEventListener('resize', () => {});
 
+    canvas.setAttribute("tabindex", "0");
+    canvas.focus();
+
+    setupKeyboardControls();
+    updateScaleDisplay();
+    
+
     requestAnimationFrame(draw);
+}
+
+function updateCenterU(value) {
+    texScaleCenter.u = parseFloat(value);
+    document.getElementById('centerU').textContent = texScaleCenter.u.toFixed(2);
+}
+
+function updateCenterV(value) {
+    texScaleCenter.v = parseFloat(value);
+    document.getElementById('centerV').textContent = texScaleCenter.v.toFixed(2);
+}
+
+function updateScale(value) {
+    texScale = parseFloat(value);
+    document.getElementById('scaleValue').textContent = texScale.toFixed(2);
+}
+
+function setupKeyboardControls() {
+    const canvas = document.getElementById("webglcanvas");
+
+    canvas.setAttribute("tabindex", "0");
+    canvas.focus();
+
+    canvas.addEventListener('keydown', (event) => {
+        switch (event.code) {
+            case 'KeyW':
+                texScaleCenter.v = Math.max(0, texScaleCenter.v - texMoveStep);
+                break;
+
+            case 'KeyS':
+                texScaleCenter.v = Math.min(1, texScaleCenter.v + texMoveStep);
+                break;
+
+            case 'KeyA':
+                texScaleCenter.u = Math.max(0, texScaleCenter.u - texMoveStep);
+                break;
+
+            case 'KeyD':
+                texScaleCenter.u = Math.min(1, texScaleCenter.u + texMoveStep);
+                break;
+
+            case 'KeyQ':
+                texScale = Math.max(0.1, texScale - 0.1);
+                break;
+
+            case 'KeyE':
+                texScale = Math.min(5.0, texScale + 0.1);
+                break;
+
+            default:
+                return;
+        }
+
+        updateScaleDisplay();
+        event.preventDefault();
+    });
+}
+
+
+function updateScaleDisplay() {
+    document.getElementById('centerU').textContent = texScaleCenter.u.toFixed(2);
+    document.getElementById('centerV').textContent = texScaleCenter.v.toFixed(2);
+    document.getElementById('scaleValue').textContent = texScale.toFixed(2);
+    
+    // Оновити позиції слайдерів
+    document.getElementById('centerUSlider').value = texScaleCenter.u;
+    document.getElementById('centerVSlider').value = texScaleCenter.v;
+    document.getElementById('scaleSlider').value = texScale;
 }
 
 function LoadTexture(gl, url) {
